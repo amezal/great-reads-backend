@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const Review = mongoose.Schema({
   _id: String,
   content: String,
+  rating: Number,
   createdAt: {
     type: Date,
     default: Date.now()

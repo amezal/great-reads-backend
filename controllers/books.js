@@ -13,7 +13,8 @@ const formatBook = async (book) => {
   //get authors names;
   const authors = await getAuthors(book);
   book.authors = authors;
-  console.log(book);
+
+
   if (book.description) {
     if (book.description.value) {
       book.description = book.description.value;
@@ -101,9 +102,8 @@ export const updateBook = async (req, res) => {
   const bookId = req.params.id;
   const book = await Book.findOneAndUpdate({ _id: bookId }, { _id: bookId }, { upsert: true });
   Object.assign(book, req.body);
-  console.log(book);
+
   await book.save();
-  // console.log(newBook);
   res.send(req.body);
 };
 
@@ -166,7 +166,23 @@ export const updateBookRatings = async (req, res) => {
 
   const ratings = book.ratings.filter(rating => rating._id !== userId)
   ratings.push({ _id: userId, rating: rating });
-  const updatedRatings = { ratings: ratings }
+  const updatedRatings = { ratings: ratings };
   Object.assign(book, updatedRatings);
   await book.save();
+}
+
+export const updateBookReviews = async (req, res) => {
+  const bookId = req.params.id;
+  const userId = req.query.user.split('|')[1];
+  const review = req.body;
+
+  const book = await Book.findOneAndUpdate({ _id: bookId }, { _id: bookId }, { upsert: true, new: true });
+
+  const reviews = book.reviews.filter(review => review._id !== userId);
+  reviews.push({ _id: userId, ...review });
+  const updatedReviews = { reviews: reviews };
+  Object.assign(book, updatedReviews);
+
+  await book.save();
+
 }
