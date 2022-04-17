@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Book from '../models/book.js';
+import User from '../models/user.js';
 
 const formatBook = async (book) => {
   const cover = book.covers ? book.covers[0] : '-1';
@@ -13,7 +14,6 @@ const formatBook = async (book) => {
   //get authors names;
   const authors = await getAuthors(book);
   book.authors = authors;
-
 
   if (book.description) {
     if (book.description.value) {
@@ -52,6 +52,9 @@ const getBookFromDB = async (id, userSub) => {
     const book = await Book.findOne({ _id: id });
     if (book) {
       const formattedBook = book.toObject();
+      const reviews = await getReviews(formattedBook);
+      formattedBook.reviews = reviews;
+
       if (userSub) {
         const userId = userSub.split('|')[1];
         const userRating = formattedBook.ratings.find(rating => rating._id === userId);
@@ -63,6 +66,7 @@ const getBookFromDB = async (id, userSub) => {
         })
 
         formattedBook.isInList = isInList || null;
+
       }
       deleteProps(formattedBook, ['users_read', 'users_reading', 'users_want', 'ratings']);
       return formattedBook;
@@ -88,6 +92,17 @@ const getAuthors = async (book) => {
     const id = author.author.key.substring(9)
     return { name: authorRes.data.name, id: id }
   }))
+}
+
+const getReviews = async (book) => {
+  if (book.reviews.length === 0) {
+    return book.reviews;
+  }
+  const userIds = book.reviews.map(review => review._id);
+
+  const users = await User.find({ _id: { $in: userIds } });
+  const reviews = book.reviews.map((review, i) => ({ ...review, name: users[i].name, picture: users[i].picture }));
+  return reviews;
 }
 
 export const getBook = async (req, res) => {
@@ -179,7 +194,7 @@ export const updateBookReviews = async (req, res) => {
   const book = await Book.findOneAndUpdate({ _id: bookId }, { _id: bookId }, { upsert: true, new: true });
 
   const reviews = book.reviews.filter(review => review._id !== userId);
-  reviews.push({ _id: userId, ...review });
+  reviews.unshift({ _id: userId, ...review });
   const updatedReviews = { reviews: reviews };
   Object.assign(book, updatedReviews);
 
