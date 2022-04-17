@@ -7,6 +7,7 @@ import cors from 'cors';
 import { getUserInfo, checkJwt } from './middleware.js';
 import usersRouter from './routes/users.js';
 import booksRouter from './routes/books.js';
+import authorsRouter from './routes/authors.js';
 import searchRouter from './routes/search.js';
 
 const app = express();
@@ -37,4 +38,5 @@ app.get('/protected', checkJwt, getUserInfo, async (req, res) => {
 
 app.use('/users', usersRouter);
 app.use('/books', booksRouter);
+app.use('/authors', authorsRouter);
 app.use('/search', searchRouter);
